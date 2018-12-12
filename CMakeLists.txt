@@ -410,19 +410,19 @@ endif()
 target_compile_definitions(boost_context PUBLIC -DBOOST_ALL_NO_LIB -DBOOST_ALL_STATIC_LINK)
 target_compile_definitions(boost_context PRIVATE -DBOOST_CONTEXT_EXPORT)
 
-target_link_libraries(boost_atomic boost_system boost_header)
-target_link_libraries(boost_filesystem boost_system boost_header)
-target_link_libraries(boost_thread boost_system boost_header Threads::Threads)
+target_link_libraries(boost_atomic boost_header)
+target_link_libraries(boost_filesystem boost_header)
+target_link_libraries(boost_thread boost_header Threads::Threads)
 target_link_libraries(boost_context boost_header)
 target_link_libraries(boost_fiber boost_context)
-target_link_libraries(boost_chrono boost_system boost_header)
-target_link_libraries(boost_locale boost_system boost_header)
-target_link_libraries(boost_date_time boost_system boost_chrono boost_header)
-target_link_libraries(boost_regex boost_system boost_header)
-target_link_libraries(boost_timer boost_system boost_chrono boost_header)
-target_link_libraries(boost_exception boost_system boost_header)
-target_link_libraries(boost_random boost_system boost_header)
-target_link_libraries(boost_program_options boost_filesystem boost_system boost_header)
+target_link_libraries(boost_chrono boost_header)
+target_link_libraries(boost_locale boost_header)
+target_link_libraries(boost_date_time boost_chrono boost_header)
+target_link_libraries(boost_regex boost_header)
+target_link_libraries(boost_timer boost_chrono boost_header)
+target_link_libraries(boost_exception boost_header)
+target_link_libraries(boost_random boost_header)
+target_link_libraries(boost_program_options boost_filesystem boost_header)
 
 
 if(WIN32)
@@ -445,7 +445,6 @@ set(BOOST_LIBRARIES
 	Boost::boost
 	Boost::atomic
 	Boost::context
-	Boost::system
 	Boost::chrono
 	Boost::date_time
 	Boost::regex
