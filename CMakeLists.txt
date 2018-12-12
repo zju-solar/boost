@@ -34,10 +34,6 @@ set(BOOST_REGEX_SRC
 	libs/regex/src/cregex.cpp
 )
 
-set(BOOST_SYSTEM_SRC
-	libs/system/src/error_code.cpp
-)
-
 if(WIN32)
 	set(BOOST_THREAD_SRC
 		libs/thread/src/tss_null.cpp
@@ -128,6 +124,43 @@ if(WIN32)
 	list(APPEND BOOST_COROUTINE_SRC libs/coroutine/src/windows/stack_traits.cpp)
 else()
 	list(APPEND BOOST_COROUTINE_SRC libs/coroutine/src/posix/stack_traits.cpp)
+endif()
+
+set(BOOST_FIBER_SRC
+	libs/fiber/src/scheduler.cpp
+	libs/fiber/src/fiber.cpp
+	libs/fiber/src/properties.cpp
+	libs/fiber/src/future.cpp
+	libs/fiber/src/recursive_mutex.cpp
+	libs/fiber/src/context.cpp
+	libs/fiber/src/timed_mutex.cpp
+	libs/fiber/src/condition_variable.cpp
+	libs/fiber/src/algo/shared_work.cpp
+	libs/fiber/src/algo/algorithm.cpp
+	libs/fiber/src/algo/work_stealing.cpp
+	libs/fiber/src/algo/round_robin.cpp
+	libs/fiber/src/recursive_timed_mutex.cpp
+	libs/fiber/src/mutex.cpp
+	libs/fiber/src/barrier.cpp
+	libs/fiber/src/numa/algo/work_stealing.cpp
+	libs/fiber/src/numa/topology.cpp
+)
+
+if (WIN32)
+list(APPEND BOOST_FIBER_SRC
+	libs/fiber/src/numa/windows/topology.cpp
+	libs/fiber/src/numa/windows/pin_thread.cpp
+)
+elseif(FREEBSD)
+list(APPEND BOOST_FIBER_SRC
+	libs/fiber/src/numa/freebsd/topology.cpp
+	libs/fiber/src/numa/freebsd/pin_thread.cpp
+)
+else()
+list(APPEND BOOST_FIBER_SRC
+	libs/fiber/src/numa/linux/topology.cpp
+	libs/fiber/src/numa/linux/pin_thread.cpp
+)
 endif()
 
 set(BOOST_DATE_TIME_SRC
@@ -236,6 +269,7 @@ set(BOOST_RANDOM_SRC libs/random/src/random_device.cpp)
 
 add_library(boost_header INTERFACE)
 add_library(Boost::boost ALIAS boost_header)
+add_library(Boost::system ALIAS boost_header)
 
 if(Boost_USE_STATIC_LIBS)
 add_library(boost_atomic STATIC ${BOOST_ATOMIC_SRC})
@@ -243,14 +277,6 @@ add_library(Boost::atomic ALIAS boost_atomic)
 else()
 add_library(boost_atomic SHARED ${BOOST_ATOMIC_SRC})
 add_library(Boost::atomic ALIAS boost_atomic)
-endif()
-
-if(Boost_USE_STATIC_LIBS)
-add_library(boost_system STATIC ${BOOST_SYSTEM_SRC})
-add_library(Boost::system ALIAS boost_system)
-else()
-add_library(boost_system SHARED ${BOOST_SYSTEM_SRC})
-add_library(Boost::system ALIAS boost_system)
 endif()
 
 if(Boost_USE_STATIC_LIBS)
@@ -267,6 +293,15 @@ add_library(Boost::context ALIAS boost_context)
 else()
 add_library(boost_context SHARED ${BOOST_CONTEXT_SRC})
 add_library(Boost::context ALIAS boost_context)
+endif()
+
+
+if(Boost_USE_STATIC_LIBS)
+add_library(boost_fiber STATIC ${BOOST_FIBER_SRC})
+add_library(Boost::fiber ALIAS boost_fiber)
+else()
+add_library(boost_fiber SHARED ${BOOST_FIBER_SRC})
+add_library(Boost::fiber ALIAS boost_fiber)
 endif()
 
 if(Boost_USE_STATIC_LIBS)
@@ -364,7 +399,7 @@ endif()
 
 target_include_directories(boost_header INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_compile_definitions(boost_system PUBLIC -DBOOST_ALL_NO_LIB -DBOOST_ALL_STATIC_LINK -DBOOST_THREAD_USE_LIB -DBOOST_FILESYSTEM_STATIC_LINK)
+target_compile_definitions(boost_header INTERFACE -DBOOST_ALL_NO_LIB -DBOOST_ALL_STATIC_LINK -DBOOST_THREAD_USE_LIB -DBOOST_FILESYSTEM_STATIC_LINK)
 
 if(Boost_USE_STATIC_LIBS)
 target_compile_definitions(boost_thread PRIVATE -DBOOST_THREAD_BUILD_LIB)
@@ -375,11 +410,11 @@ endif()
 target_compile_definitions(boost_context PUBLIC -DBOOST_ALL_NO_LIB -DBOOST_ALL_STATIC_LINK)
 target_compile_definitions(boost_context PRIVATE -DBOOST_CONTEXT_EXPORT)
 
-target_link_libraries(boost_system boost_header)
 target_link_libraries(boost_atomic boost_system boost_header)
 target_link_libraries(boost_filesystem boost_system boost_header)
 target_link_libraries(boost_thread boost_system boost_header Threads::Threads)
 target_link_libraries(boost_context boost_header)
+target_link_libraries(boost_fiber boost_context)
 target_link_libraries(boost_chrono boost_system boost_header)
 target_link_libraries(boost_locale boost_system boost_header)
 target_link_libraries(boost_date_time boost_system boost_chrono boost_header)
@@ -423,7 +458,6 @@ set(BOOST_LIBRARIES
 	Boost::locale
 PARENT_SCOPE)
 
-set_target_properties(boost_system PROPERTIES FOLDER "third_party/boost")
 set_target_properties(boost_atomic PROPERTIES FOLDER "third_party/boost")
 set_target_properties(boost_filesystem PROPERTIES FOLDER "third_party/boost")
 set_target_properties(boost_thread PROPERTIES FOLDER "third_party/boost")
