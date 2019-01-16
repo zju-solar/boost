@@ -2,6 +2,7 @@
 project(Boost)
 
 option(Boost_USE_STATIC_LIBS "" ON)
+option(DISABLE_BOOST_LOCALE "not build boost.locale" OFF)
 
 if(WIN32)
 ENABLE_LANGUAGE(ASM_MASM)
@@ -102,6 +103,9 @@ else()
 		else()
 			set(ARCH "arm")
 		endif()
+	elseif ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "aarch64")
+		set(SYSABI "aapcs")
+		set(ARCH "arm64")
 	else()
 		message(FATAL_ERROR "unsupported cpu")
 	endif()
@@ -320,34 +324,36 @@ add_library(boost_filesystem SHARED ${BOOST_FILESYSTEM_SRC})
 add_library(Boost::filesystem ALIAS boost_filesystem)
 endif()
 
-if(Boost_USE_STATIC_LIBS)
-	add_library(boost_locale STATIC ${BOOST_LOCALE_SRC})
-	add_library(Boost::locale ALIAS boost_locale)
-	if(WIN32)
-		target_compile_definitions(boost_locale PRIVATE -DBOOST_LOCALE_WITH_WCONV)
+if (NOT DISABLE_BOOST_LOCALE)
+	if(Boost_USE_STATIC_LIBS)
+		add_library(boost_locale STATIC ${BOOST_LOCALE_SRC})
+		add_library(Boost::locale ALIAS boost_locale)
+		if(WIN32)
+			target_compile_definitions(boost_locale PRIVATE -DBOOST_LOCALE_WITH_WCONV)
+		else()
+			target_compile_definitions(boost_locale PRIVATE -DBOOST_LOCALE_WITH_ICONV)
+		endif()
+
+		if(APPLE)
+		target_link_libraries(boost_locale iconv)
+		endif()
+
 	else()
-		target_compile_definitions(boost_locale PRIVATE -DBOOST_LOCALE_WITH_ICONV)
+		add_library(boost_locale SHARED ${BOOST_LOCALE_SRC})
+		add_library(Boost::locale ALIAS boost_locale)
+
+		if(WIN32)
+			target_compile_definitions(boost_locale PRIVATE -DBOOST_LOCALE_WITH_WCONV)
+		else()
+			target_compile_definitions(boost_locale PRIVATE -DBOOST_LOCALE_WITH_ICONV)
+		endif()
+
+		if(APPLE)
+		target_link_libraries(boost_locale iconv)
+		endif()
 	endif()
 
-	if(APPLE)
-	target_link_libraries(boost_locale iconv)
-	endif()
-
-else()
-	add_library(boost_locale SHARED ${BOOST_LOCALE_SRC})
-	add_library(Boost::locale ALIAS boost_locale)
-
-	if(WIN32)
-		target_compile_definitions(boost_locale PRIVATE -DBOOST_LOCALE_WITH_WCONV)
-	else()
-		target_compile_definitions(boost_locale PRIVATE -DBOOST_LOCALE_WITH_ICONV)
-	endif()
-
-	if(APPLE)
-	target_link_libraries(boost_locale iconv)
-	endif()
 endif()
-
 
 if(Boost_USE_STATIC_LIBS)
 add_library(boost_date_time STATIC ${BOOST_DATE_TIME_SRC})
@@ -416,7 +422,11 @@ target_link_libraries(boost_thread boost_header Threads::Threads)
 target_link_libraries(boost_context boost_header)
 target_link_libraries(boost_fiber boost_context)
 target_link_libraries(boost_chrono boost_header)
+
+if(NOT DISABLE_BOOST_LOCALE)
 target_link_libraries(boost_locale boost_header)
+endif()
+
 target_link_libraries(boost_date_time boost_chrono boost_header)
 target_link_libraries(boost_regex boost_header)
 target_link_libraries(boost_timer boost_chrono boost_header)
@@ -438,9 +448,10 @@ else()
 	if(Boost_USE_STATIC_LIBS)
 		target_compile_definitions(boost_context PRIVATE -DBOOST_USE_UCONTEXT)
 	endif()
+
 endif()
 
-
+if (NOT DISABLE_BOOST_LOCALE)
 set(BOOST_LIBRARIES
 	Boost::boost
 	Boost::atomic
@@ -456,6 +467,22 @@ set(BOOST_LIBRARIES
 	Boost::program_options
 	Boost::locale
 PARENT_SCOPE)
+else()
+set(BOOST_LIBRARIES
+	Boost::boost
+	Boost::atomic
+	Boost::context
+	Boost::chrono
+	Boost::date_time
+	Boost::regex
+	Boost::timer
+	Boost::exception
+	Boost::filesystem
+	Boost::thread
+	Boost::random
+	Boost::program_options
+PARENT_SCOPE)
+endif()
 
 set_target_properties(boost_atomic PROPERTIES FOLDER "third_party/boost")
 set_target_properties(boost_filesystem PROPERTIES FOLDER "third_party/boost")
