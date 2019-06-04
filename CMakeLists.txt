@@ -4,6 +4,17 @@ project(Boost)
 option(Boost_USE_STATIC_LIBS "" ON)
 option(DISABLE_BOOST_LOCALE "not build boost.locale" OFF)
 
+find_path(LAMZ_INCLUDE_DIR lzma.h PATH /usr/include /usr/local/include )
+find_library(LAMZ_LIBRARY NAMES lzma)
+
+find_package(ZLIB)
+
+if (LAMZ_INCLUDE_DIR AND LAMZ_LIBRARY)
+  set(LZMA_FOUND TRUE)
+else ()
+  set(LZMA_FOUND FALSE)
+endif ()
+
 if(WIN32)
 ENABLE_LANGUAGE(ASM_MASM)
 else()
@@ -264,6 +275,25 @@ set(BOOST_PROGRAM_OPTIONS_SRC
 	libs/program_options/src/config_file.cpp
 )
 
+set(BOOST_IOSTREAM_SRC
+	libs/iostreams/src/mapped_file.cpp
+	libs/iostreams/src/file_descriptor.cpp
+)
+
+if (LZMA_FOUND)
+	list(APPEND BOOST_IOSTREAM_SRC
+		libs/iostreams/src/lzma.cpp
+	)
+	message("boost iostreams enable lzma support")
+endif()
+
+if (ZLIB_FOUND)
+	list(APPEND BOOST_IOSTREAM_SRC
+		libs/iostreams/src/zlib.cpp
+	)
+	message("boost iostreams enable zip support")
+endif()
+
 set(BOOST_TIMER_SRC
 	libs/timer/src/auto_timers_construction.cpp
 	libs/timer/src/cpu_timer.cpp
@@ -380,6 +410,23 @@ add_library(Boost::timer ALIAS boost_timer)
 endif()
 
 if(Boost_USE_STATIC_LIBS)
+add_library(boost_iostreams STATIC ${BOOST_IOSTREAM_SRC})
+add_library(Boost::iostreams ALIAS boost_iostreams)
+else()
+add_library(boost_iostreams SHARED ${BOOST_IOSTREAM_SRC})
+add_library(Boost::iostreams ALIAS boost_iostreams)
+endif()
+
+if (LZMA_FOUND)
+	target_link_libraries(boost_iostreams ${LAMZ_LIBRARY})
+	target_include_directories(boost_iostreams PUBLIC ${LAMZ_INCLUDE_DIR})
+endif()
+if (ZLIB_FOUND)
+	target_link_libraries(boost_iostreams ${ZLIB_LIBRARY})
+	target_include_directories(boost_iostreams PUBLIC ${ZLIB_INCLUDE_DIRS})
+endif()
+
+if(Boost_USE_STATIC_LIBS)
 add_library(boost_exception STATIC ${BOOST_EXCEPTION_SRC})
 add_library(Boost::exception ALIAS boost_exception)
 else()
@@ -430,6 +477,7 @@ endif()
 target_link_libraries(boost_date_time boost_chrono boost_header)
 target_link_libraries(boost_regex boost_header)
 target_link_libraries(boost_timer boost_chrono boost_header)
+target_link_libraries(boost_iostreams boost_header)
 target_link_libraries(boost_exception boost_header)
 target_link_libraries(boost_random boost_header)
 target_link_libraries(boost_program_options boost_filesystem boost_header)
