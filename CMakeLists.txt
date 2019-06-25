@@ -8,6 +8,7 @@ find_path(LAMZ_INCLUDE_DIR lzma.h PATH /usr/include /usr/local/include )
 find_library(LAMZ_LIBRARY NAMES lzma)
 
 find_package(ZLIB)
+find_package(Iconv)
 
 if (LAMZ_INCLUDE_DIR AND LAMZ_LIBRARY)
   set(LZMA_FOUND TRUE)
@@ -257,9 +258,6 @@ libs/locale/src/posix/codecvt.cpp
 	)
 endif()
 
-if(CMAKE_COMPILER_IS_GNUCXX)
-	add_definitions(-DBOOST_LOCALE_WITH_ICONV)
-endif()
 
 set(BOOST_PROGRAM_OPTIONS_SRC
 	libs/program_options/src/winmain.cpp
@@ -358,29 +356,27 @@ if (NOT DISABLE_BOOST_LOCALE)
 	if(Boost_USE_STATIC_LIBS)
 		add_library(boost_locale STATIC ${BOOST_LOCALE_SRC})
 		add_library(Boost::locale ALIAS boost_locale)
-		if(WIN32)
-			target_compile_definitions(boost_locale PRIVATE -DBOOST_LOCALE_WITH_WCONV)
-		else()
-			target_compile_definitions(boost_locale PRIVATE -DBOOST_LOCALE_WITH_ICONV)
-		endif()
 
-		if(APPLE)
-		target_link_libraries(boost_locale iconv)
+		if (Iconv_FOUND)
+			target_compile_definitions(boost_locale PRIVATE -DBOOST_LOCALE_WITH_ICONV)
+			if (NOT Iconv_IS_BUILT_IN)
+				target_link_libraries(boost_locale Iconv::Iconv)
+				target_include_directories(boost_locale PRIVATE ${Iconv_INCLUDE_DIRS})
+			endif()
 		endif()
 
 	else()
 		add_library(boost_locale SHARED ${BOOST_LOCALE_SRC})
 		add_library(Boost::locale ALIAS boost_locale)
 
-		if(WIN32)
-			target_compile_definitions(boost_locale PRIVATE -DBOOST_LOCALE_WITH_WCONV)
-		else()
+		if (Iconv_FOUND)
 			target_compile_definitions(boost_locale PRIVATE -DBOOST_LOCALE_WITH_ICONV)
+			if (NOT Iconv_IS_BUILT_IN)
+				target_link_libraries(boost_locale Iconv::Iconv)
+				target_include_directories(boost_locale PRIVATE ${Iconv_INCLUDE_DIRS})
+			endif()
 		endif()
 
-		if(APPLE)
-		target_link_libraries(boost_locale iconv)
-		endif()
 	endif()
 
 endif()
