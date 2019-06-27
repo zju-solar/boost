@@ -118,8 +118,11 @@ else()
 	elseif ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "aarch64")
 		set(SYSABI "aapcs")
 		set(ARCH "arm64")
+	elseif ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "i686")
+		set(SYSABI "sysv")
+		set(ARCH "i386")
 	else()
-		message(FATAL_ERROR "unsupported cpu")
+		message(FATAL_ERROR "unsupported cpu: ${CMAKE_SYSTEM_PROCESSOR}" )
 	endif()
 endif()
 
@@ -245,19 +248,19 @@ if (WIN32)
 		libs/locale/src/win32/lcid.hpp
 	)
 else()
-	list(APPEND BOOST_LOCALE_SRC
-		libs/locale/src/posix/all_generator.hpp
-libs/locale/src/posix/codecvt.hpp
-libs/locale/src/posix/posix_backend.cpp
-libs/locale/src/posix/converter.cpp
-libs/locale/src/posix/posix_backend.hpp
-libs/locale/src/posix/numeric.cpp
-libs/locale/src/posix/collate.cpp
-libs/locale/src/posix/codecvt.cpp
-
-	)
+	if (Iconv_FOUND)
+		list(APPEND BOOST_LOCALE_SRC
+			libs/locale/src/posix/all_generator.hpp
+			libs/locale/src/posix/codecvt.hpp
+			libs/locale/src/posix/posix_backend.cpp
+			libs/locale/src/posix/converter.cpp
+			libs/locale/src/posix/posix_backend.hpp
+			libs/locale/src/posix/numeric.cpp
+			libs/locale/src/posix/collate.cpp
+			libs/locale/src/posix/codecvt.cpp
+		)
+	endif()
 endif()
-
 
 set(BOOST_PROGRAM_OPTIONS_SRC
 	libs/program_options/src/winmain.cpp
