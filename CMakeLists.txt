@@ -58,7 +58,6 @@ if(WIN32)
 	)
 else()
 	set(BOOST_THREAD_SRC
-		libs/thread/src/tss_null.cpp
 		libs/thread/src/future.cpp
 		libs/thread/src/pthread/thread.cpp
 		libs/thread/src/pthread/once_atomic.cpp
@@ -199,12 +198,14 @@ set(BOOST_FILESYSTEM_SRC
 	libs/filesystem/src/operations.cpp
 	libs/filesystem/src/unique_path.cpp
 	libs/filesystem/src/utf8_codecvt_facet.cpp
-	libs/filesystem/src/windows_file_codecvt.hpp
 	libs/filesystem/src/codecvt_error_category.cpp
 	libs/filesystem/src/path.cpp
-	libs/filesystem/src/windows_file_codecvt.cpp
 	libs/filesystem/src/portability.cpp
 )
+
+if (WIN32)
+	list(APPEND BOOST_FILESYSTEM_SRC 	libs/filesystem/src/windows_file_codecvt.cpp)
+endif()
 
 set(BOOST_LOCALE_SRC
 	libs/locale/src/encoding/codepage.cpp
@@ -543,3 +544,4 @@ set_target_properties(boost_timer PROPERTIES FOLDER "third_party/boost")
 set_target_properties(boost_exception PROPERTIES FOLDER "third_party/boost")
 set_target_properties(boost_random PROPERTIES FOLDER "third_party/boost")
 set_target_properties(boost_program_options PROPERTIES FOLDER "third_party/boost")
+set_target_properties(boost_iostreams PROPERTIES FOLDER "third_party/boost")
